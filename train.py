@@ -23,7 +23,7 @@ from utils.dataset_DCL import collate_fn4train, collate_fn4val, collate_fn4test,
 import pdb
 
 os.environ['CUDA_DEVICE_ORDRE'] = 'PCI_BUS_ID'
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2'
 
 # parameters setting
 def parse_args():
@@ -39,9 +39,9 @@ def parse_args():
     parser.add_argument('--epoch', dest='epoch',
                         default=360, type=int)
     parser.add_argument('--tb', dest='train_batch',
-                        default=25, type=int)
+                        default=16, type=int)
     parser.add_argument('--vb', dest='val_batch',
-                        default=25, type=int)
+                        default=16, type=int)
     parser.add_argument('--sp', dest='save_point',
                         default=1000, type=int)
     parser.add_argument('--cp', dest='check_point',
@@ -55,9 +55,9 @@ def parse_args():
     parser.add_argument('--start_epoch', dest='start_epoch',
                         default=0,  type=int)
     parser.add_argument('--tnw', dest='train_num_workers',
-                        default=32, type=int)
+                        default=8, type=int)
     parser.add_argument('--vnw', dest='val_num_workers',
-                        default=32, type=int)
+                        default=8, type=int)
     parser.add_argument('--detail', dest='discribe',
                         default='', type=str)
     parser.add_argument('--size', dest='resize_resolution',
@@ -71,6 +71,7 @@ def parse_args():
     parser.add_argument('--swap_num', default=[7, 7],
                     nargs=2, metavar=('swap1', 'swap2'),
                     type=int, help='specify a range')
+    parser.add_argument('--use-adam', action='store_true')
     args = parser.parse_args()
     return args
 
@@ -201,8 +202,12 @@ if __name__ == '__main__':
     lr_ratio = args.cls_lr_ratio
     base_lr = args.base_lr
     if Config.use_backbone:
+        if Config.use_adam:
+            optimizer = optim.Adam([{'params': base_params},
+                                    {'params': model.module.classifier.parameters(), 'lr': base_lr}], lr = base_lr, 
+                                    betas=(0.9, 0.999))
         optimizer = optim.SGD([{'params': base_params},
-                               {'params': model.module.classifier.parameters(), 'lr': base_lr}], lr = base_lr,momentum=0.9)
+                               {'params': model.module.classifier.parameters(), 'lr': base_lr}], lr = base_lr, momentum=0.9)
     else:
         optimizer = optim.SGD([{'params': base_params},
                                {'params': model.module.classifier.parameters(), 'lr': lr_ratio*base_lr},

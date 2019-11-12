@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import pretrainedmodels
 
 from config import pretrained_model
+from . import resnet as resnetzoo
 
 import pdb
 
@@ -18,7 +19,9 @@ class MainModel(nn.Module):
         self.use_Asoftmax = config.use_Asoftmax
         print(self.backbone_arch)
 
-        if self.backbone_arch in dir(models):
+        if self.backbone_arch in dir(resnetzoo):
+            self.model = getattr(resnetzoo, self.backbone_arch)(pretrained=True)
+        elif self.backbone_arch in dir(models):
             self.model = getattr(models, self.backbone_arch)()
             if self.backbone_arch in pretrained_model:
                 self.model.load_state_dict(torch.load(pretrained_model[self.backbone_arch]))
@@ -28,7 +31,7 @@ class MainModel(nn.Module):
             else:
                 self.model = pretrainedmodels.__dict__[self.backbone_arch](num_classes=1000)
 
-        if self.backbone_arch == 'resnet50' or self.backbone_arch == 'se_resnet50':
+        if self.backbone_arch in ['resnet50', 'se_resnet50', 'wide_resnet50_2', 'resnext50_32x4d']:
             self.model = nn.Sequential(*list(self.model.children())[:-2])
         if self.backbone_arch == 'senet154':
             self.model = nn.Sequential(*list(self.model.children())[:-3])

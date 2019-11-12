@@ -7,6 +7,7 @@ from math import ceil
 import datetime
 
 import torch
+from tqdm import tqdm
 from torch import nn
 from torch.autograd import Variable
 #from torchvision.utils import make_grid, save_image
@@ -20,7 +21,6 @@ import pdb
 
 def dt():
     return datetime.datetime.now().strftime("%Y-%m-%d-%H_%M_%S")
-
 
 def train(Config,
           model,
@@ -58,12 +58,14 @@ def train(Config,
     get_focal_loss = FocalLoss()
     get_angle_loss = AngleLoss()
 
+    print('Start training')
     for epoch in range(start_epoch,epoch_num-1):
         exp_lr_scheduler.step(epoch)
         model.train(True)
 
         save_grad = []
-        for batch_cnt, data in enumerate(data_loader['train']):
+        for batch_cnt, data in tqdm(enumerate(data_loader['train']), desc='Epoch {}'.format(epoch+1), 
+                ncols=80, leave=True, total=len(data_loader['train'])):
             step += 1
             loss = 0
             model.train(True)
@@ -81,12 +83,9 @@ def train(Config,
                 swap_law = Variable(torch.from_numpy(np.array(swap_law)).float().cuda())
 
             optimizer.zero_grad()
-
-
             alpha_ = 1
             beta_ = 1
             gamma_ = 1
-
 
             if inputs.size(0) < 2*train_batch_size:
                 outputs = model(inputs, inputs[0:-1:2])
@@ -127,8 +126,6 @@ def train(Config,
 
             # evaluation & save
             if step % checkpoint == 0:
-
-
 
                 rec_loss = []
                 print(30*'--', flush=True)

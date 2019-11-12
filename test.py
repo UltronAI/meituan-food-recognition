@@ -25,13 +25,10 @@ from utils.dataset_DCL import collate_fn4train, collate_fn4test, collate_fn4val,
 from config import LoadConfig, load_data_transformers
 from utils.test_tool import set_text, save_multi_img, cls_base_acc
 
-
-
-
 import pdb
 
 os.environ['CUDA_DEVICE_ORDRE'] = 'PCI_BUS_ID'
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2'
 
 def parse_args():
     parser = argparse.ArgumentParser(description='dcl parameters')
@@ -58,6 +55,9 @@ def parse_args():
     parser.add_argument('--swap_num', default=[7, 7],
                     nargs=2, metavar=('swap1', 'swap2'),
                     type=int, help='specify a range')
+    parser.add_argument('--use-adam', action='store_true')
+    parser.add_argument('--cls_2', dest='cls_2', action='store_false')
+    parser.add_argument('--cls_mul', dest='cls_mul', action='store_true')
     args = parser.parse_args()
     return args
 
@@ -70,7 +70,8 @@ if __name__ == '__main__':
         raise Exception('**** miss --ss save suffix is needed. ')
 
     Config = LoadConfig(args, args.version)
-
+    Config.cls_2 = args.cls_2
+    Config.cls_2xmul = args.cls_mul
 
     if args.version == 'test':
         Config.rawdata_root = 'dataset/MTFood-1000/data/test'
@@ -105,7 +106,8 @@ if __name__ == '__main__':
 
     model = MainModel(Config)
     model_dict=model.state_dict()
-    resume='/home/ludc/code/DCL-master/net_model/_103121_MTFood-1000/weights_23_2723_0.7067_0.8779.pth'
+    resume = args.resume
+    #resume='/home/ludc/code/DCL-master/net_model/_103121_MTFood-1000/weights_23_2723_0.7067_0.8779.pth'
     pretrained_dict=torch.load(resume)
     pretrained_dict = {k[7:]: v for k, v in pretrained_dict.items() if k[7:] in model_dict}
     model_dict.update(pretrained_dict)

@@ -127,6 +127,7 @@ class LoadConfig(object):
         self.weighted_sample = False
         self.cls_2 = False
         self.cls_2xmul = True
+        self.use_adam = args.use_adam
 
         self.log_folder = './logs'
         if not os.path.exists(self.log_folder):
