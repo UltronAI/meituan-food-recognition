@@ -206,15 +206,23 @@ if __name__ == '__main__':
             optimizer = optim.Adam([{'params': base_params},
                                     {'params': model.module.classifier.parameters(), 'lr': base_lr}], lr = base_lr, 
                                     betas=(0.9, 0.999))
-        optimizer = optim.SGD([{'params': base_params},
-                               {'params': model.module.classifier.parameters(), 'lr': base_lr}], lr = base_lr, momentum=0.9)
+        else:
+            optimizer = optim.SGD([{'params': base_params},
+                                    {'params': model.module.classifier.parameters(), 'lr': base_lr}], lr = base_lr, momentum=0.9)
     else:
-        optimizer = optim.SGD([{'params': base_params},
-                               {'params': model.module.classifier.parameters(), 'lr': lr_ratio*base_lr},
-                               {'params': model.module.classifier_swap.parameters(), 'lr': lr_ratio*base_lr},
-                               {'params': model.module.Convmask.parameters(), 'lr': lr_ratio*base_lr},
-                              ], lr = base_lr,momentum=0.9)
-
+        if Config.use_adam:
+            optimizer = optim.Adam([{'params': base_params},
+                                    {'params': model.module.classifier.parameters(), 'lr': lr_ratio*base_lr},
+                                    {'params': model.module.classifier_swap.parameters(), 'lr': lr_ratio*base_lr},
+                                    {'params': model.module.Convmask.parameters(), 'lr': lr_ratio*base_lr},
+                                    ], lr = base_lr, 
+                                    betas=(0.9, 0.999))
+        else:
+            optimizer = optim.SGD([{'params': base_params},
+                                    {'params': model.module.classifier.parameters(), 'lr': lr_ratio*base_lr},
+                                    {'params': model.module.classifier_swap.parameters(), 'lr': lr_ratio*base_lr},
+                                    {'params': model.module.Convmask.parameters(), 'lr': lr_ratio*base_lr},
+                                    ], lr = base_lr,momentum=0.9)
 
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=args.decay_step, gamma=0.1)
 
