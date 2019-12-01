@@ -39,9 +39,9 @@ def parse_args():
     parser.add_argument('--epoch', dest='epoch',
                         default=360, type=int)
     parser.add_argument('--tb', dest='train_batch',
-                        default=16, type=int)
+                        default=8, type=int)
     parser.add_argument('--vb', dest='val_batch',
-                        default=16, type=int)
+                        default=8, type=int)
     parser.add_argument('--sp', dest='save_point',
                         default=1000, type=int)
     parser.add_argument('--cp', dest='check_point',

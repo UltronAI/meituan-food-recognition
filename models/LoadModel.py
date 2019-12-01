@@ -7,6 +7,7 @@ import pretrainedmodels
 
 from config import pretrained_model
 from . import resnet as resnetzoo
+from . import densenet as densenetzoo
 
 import pdb
 
@@ -21,8 +22,11 @@ class MainModel(nn.Module):
 
         if self.backbone_arch in dir(resnetzoo):
             self.model = getattr(resnetzoo, self.backbone_arch)(pretrained=True)
+        elif self.backbone_arch in dir(densenetzoo):
+            self.model = getattr(densenetzoo, self.backbone_arch)(pretrained=True)
+            # print(self.model.children())
         elif self.backbone_arch in dir(models):
-            self.model = getattr(models, self.backbone_arch)()
+            self.model = getattr(models, self.backbone_arch)(pretrained=True)
             if self.backbone_arch in pretrained_model:
                 self.model.load_state_dict(torch.load(pretrained_model[self.backbone_arch]))
         else:
@@ -31,8 +35,10 @@ class MainModel(nn.Module):
             else:
                 self.model = pretrainedmodels.__dict__[self.backbone_arch](num_classes=1000)
 
-        if self.backbone_arch in ['resnet50', 'se_resnet50', 'wide_resnet50_2', 'resnext50_32x4d']:
+        if self.backbone_arch in ['resnet50', 'se_resnet50', 'wide_resnet50_2', 'resnext50_32x4d', 'densenet121']:
             self.model = nn.Sequential(*list(self.model.children())[:-2])
+            # print(list(self.model.children()))
+            # exit(0)
         if self.backbone_arch == 'senet154':
             self.model = nn.Sequential(*list(self.model.children())[:-3])
         if self.backbone_arch == 'se_resnext101_32x4d':
@@ -54,7 +60,9 @@ class MainModel(nn.Module):
             self.Aclassifier = AngleLinear(2048, self.num_classes, bias=False)
 
     def forward(self, x, last_cont=None):
+        # print(x.size())
         x = self.model(x)
+        # print(x.size())
         if self.use_dcl:
             mask = self.Convmask(x)
             mask = self.avgpool2(mask)
