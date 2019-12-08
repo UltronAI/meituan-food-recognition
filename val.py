@@ -25,9 +25,6 @@ from utils.dataset_DCL import collate_fn4train, collate_fn4test, collate_fn4val,
 from config import LoadConfig, load_data_transformers
 from utils.test_tool import set_text, save_multi_img, cls_base_acc
 
-
-
-
 import pdb
 
 os.environ['CUDA_DEVICE_ORDRE'] = 'PCI_BUS_ID'
@@ -44,7 +41,7 @@ def parse_args():
     parser.add_argument('--nw', dest='num_workers',
                         default=32, type=int)
     parser.add_argument('--ver', dest='version',
-                        default='test', type=str)
+                        default='val', type=str)
     parser.add_argument('--save', dest='resume',
                         default=None, type=str)
     parser.add_argument('--size', dest='resize_resolution',
@@ -58,6 +55,7 @@ def parse_args():
     parser.add_argument('--swap_num', default=[7, 7],
                     nargs=2, metavar=('swap1', 'swap2'),
                     type=int, help='specify a range')
+    parser.add_argument('--use-adam', action='store_true')
     args = parser.parse_args()
     return args
 
@@ -103,10 +101,13 @@ if __name__ == '__main__':
 
     cudnn.benchmark = True
 
+    Config.cls_2 = True
+    Config.cls_2xmul = False
+
     model = MainModel(Config)
     model_dict=model.state_dict()
-    resume='/home/ludc/code/DCL-master/net_model/_103121_MTFood-1000/weights_23_2723_0.7067_0.8779.pth'
-    pretrained_dict=torch.load(resume)
+    # resume='/home/ludc/code/DCL-master/net_model/_103121_MTFood-1000/weights_23_2723_0.7067_0.8779.pth'
+    pretrained_dict=torch.load(args.resume)
     pretrained_dict = {k[7:]: v for k, v in pretrained_dict.items() if k[7:] in model_dict}
     model_dict.update(pretrained_dict)
     model.load_state_dict(model_dict)
@@ -129,7 +130,7 @@ if __name__ == '__main__':
         if os.path.exists('prediction.xls'):
             os.remove('prediction.xls')
 
-        f = open('test_prediction.txt','a')
+        f = open('{}.txt'.format(args.save_suffix),'a')
 
         for batch_cnt_val, data_val in enumerate(dataloader):
             count_bar.update(1)
@@ -172,10 +173,14 @@ if __name__ == '__main__':
             row = 1
 
             sheet.write(0, 0, 'id')
-            sheet.write(0, 1, 'predicted')
+            sheet.write(0, 1, 'label')
+            # sheet.write(0, 2, 'prediction-1')
+            # sheet.write(0, 3, 'prediction-2')
+            # sheet.write(0, 4, 'prediction-3')
 
             for line in str:
                 image_id = line.split(' ', 1)[0]
+                gt = image_id.split('_')[0]
                 label = line.split(' ', 1)[1]
                 label1 = label.split('[')[1]
                 label2 = label1.split(']')[0]
@@ -186,6 +191,11 @@ if __name__ == '__main__':
                 predict = predict1 + ' ' + predict2 + ' ' + predict3
                 sheet.write(row, 0, image_id)
                 sheet.write(row, 1, predict)
+                # sheet.write(row, 1, gt)
+                # sheet.write(row, 2, predict1)
+                # sheet.write(row, 3, predict2)
+                # sheet.write(row, 4, predict3)
+                sheet.write(row, 2, label)
                 # sheet.write(row,1,predict2)
                 # sheet.write(row,1,predict3)
                 row += 1
@@ -197,7 +207,7 @@ if __name__ == '__main__':
         val_acc3 = val_corrects3 / len(data_set)
 
         if args.version == 'val':
-            print('val_acc1: %.4f val_acc3: %.4' % val_acc1,val_acc3)
+            print('val_acc1: %.4f val_acc3: %.4f' % (val_acc1, val_acc3))
 
             # if args.acc_report:
             #     for sub_name, sub_cat, sub_val, sub_label in zip(img_name, top3_pos.tolist(), top3_val.tolist(), labels.tolist()):
